@@ -25,20 +25,26 @@ entry *findName(char lastname[], entry *pHead)
     }
     return NULL;
 }
-
-append_a *new_append_a(char *ptr, char *eptr, int tid, int ntd,
-                       entry *start)
+/* ThrdInitial: Store value for each thread*/
+/* StartAds: The starting address of lastName, where the space was allocated by mmap.
+   EndAdrs: The end of the address lastName can use.
+   tid: Id of the threads
+   nthrd : The number of the thread.
+   pptr: The pointer of entry pool.   
+*/ 
+ThrdStack *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd,
+                       entry *pptr)
 {
-    append_a *app = (append_a *) malloc(sizeof(append_a));
+    ThrdStack *stack = (ThrdStack *) malloc(sizeof(ThrdStack));
 
-    app->ptr = ptr;
-    app->eptr = eptr;
-    app->tid = tid;
-    app->nthread = ntd;
-    app->entryStart = start;
+    stack->StartAdrs = StartAdrs;
+    stack->EndAdrs = EndAdrs;
+    stack->tid = tid;
+    stack->nthread = nthrd;
+    stack->PoolPtr = pptr;
 
-    app->pHead = (app->pLast = app->entryStart);
-    return app;
+    stack->pHead = (stack->pTail = stack->PoolPtr);
+    return stack;
 }
 
 void append(void *arg)
@@ -48,20 +54,20 @@ void append(void *arg)
 
     clock_gettime(CLOCK_REALTIME, &start);
 
-    append_a *app = (append_a *) arg;
+    ThrdStack *stack = (ThrdStack *) arg;
 
     int count = 0;
-    entry *j = app->entryStart;
-    for (char *i = app->ptr; i < app->eptr;
-            i += MAX_LAST_NAME_SIZE * app->nthread,
-            j += app->nthread,count++) {
-        app->pLast->pNext = j;
-        app->pLast = app->pLast->pNext;
+    entry *j = stack->PoolPtr;
+    for (char *i = stack->StartAdrs; i < stack->EndAdrs;
+            i += MAX_LAST_NAME_SIZE * stack->nthread,
+            j += stack->nthread,count++) {
+        stack->pTail->pNext = j;
+        stack->pTail = stack->pTail->pNext;
 
-        app->pLast->lastName = i;
+        stack->pTail->lastName = i;
         dprintf("thread %d append string = %s\n",
-                app->tid, app->pLast->lastName);
-        app->pLast->pNext = NULL;
+                stack->tid, stack->pTail->lastName);
+        stack->pTail->pNext = NULL;
     }
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);

@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define MAX_BUFF_SIZE 1000
+#define MAX_BUFF_SIZE 16
 
 void file_align(char *org, char *mod, int pad)
 {
@@ -22,7 +22,7 @@ void file_align(char *org, char *mod, int pad)
     while (fgets(rbuf, sizeof(rbuf), fd0)) {
         memset(wbuf, '\0', pad);
 
-        if ((suffix = (pad - strlen(rbuf))) != 0)
+        if ((suffix = (pad - strlen(rbuf))) > 0)
             strcpy(wbuf, rbuf);
 
         fwrite(wbuf, pad, 1, fd1);

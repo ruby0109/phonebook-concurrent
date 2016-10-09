@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 #else
-
+/* Align data file to MAX_LAST_NAME_SIZE one line*/
 #include "file.c"
 #include "debug.h"
 #include <fcntl.h>
@@ -74,26 +74,29 @@ int main(int argc, char *argv[])
 #endif
     clock_gettime(CLOCK_REALTIME, &start);
 
+    /* mmap for data file*/
     char *map = mmap(NULL, fs, PROT_READ, MAP_SHARED, fd, 0);
     assert(map && "mmap error");
 
-    /* allocate at beginning */
+    /* entry pool for allocate space for the whole entry*/
     entry *entry_pool = (entry *) malloc(sizeof(entry) *
                                          fs / MAX_LAST_NAME_SIZE);
 
     assert(entry_pool && "entry_pool error");
-
+    /* no use in Linuxthread and for compatibility*/
     pthread_setconcurrency(THREAD_NUM + 1);
-
+    
     pthread_t *tid = (pthread_t *) malloc(sizeof(pthread_t) * THREAD_NUM);
-    append_a **app = (append_a **) malloc(sizeof(append_a *) * THREAD_NUM);
+    ThrdStack **stack = (ThrdStack **) malloc(sizeof(ThrdStack *) * THREAD_NUM);
     for (int i = 0; i < THREAD_NUM; i++)
-        app[i] = new_append_a(map + MAX_LAST_NAME_SIZE * i, map + fs, i,
+    /* ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd, entry *pptr) */
+    /* ThrdInitial: Store value for each thread*/
+        stack[i] = ThrdInitial(map + MAX_LAST_NAME_SIZE * i, map + fs, i,
                               THREAD_NUM, entry_pool + i);
-
+    /* Thread append each list in way of column major*/ 
     clock_gettime(CLOCK_REALTIME, &mid);
     for (int i = 0; i < THREAD_NUM; i++)
-        pthread_create( &tid[i], NULL, (void *) &append, (void *) app[i]);
+        pthread_create( &tid[i], NULL, (void *) &append, (void *) stack[i]);
 
     for (int i = 0; i < THREAD_NUM; i++)
         pthread_join(tid[i], NULL);
@@ -102,23 +105,29 @@ int main(int argc, char *argv[])
     pHead = pHead->pNext;
     for (int i = 0; i < THREAD_NUM; i++) {
         if (i == 0) {
-            pHead = app[i]->pHead->pNext;
+            pHead = stack[i]->pHead->pNext;
             dprintf("Connect %d head string %s %p\n", i,
-                    app[i]->pHead->pNext->lastName, app[i]->ptr);
+                    stack[i]->pHead->pNext->lastName, stack[i]->StartAdrs);
         } else {
-            etmp->pNext = app[i]->pHead->pNext;
+            etmp->pNext = stack[i]->pHead->pNext;
             dprintf("Connect %d head string %s %p\n", i,
-                    app[i]->pHead->pNext->lastName, app[i]->ptr);
+                    stack[i]->pHead->pNext->lastName, stack[i]->StartAdrs);
         }
 
-        etmp = app[i]->pLast;
+        etmp = stack[i]->pTail;
         dprintf("Connect %d tail string %s %p\n", i,
-                app[i]->pLast->lastName, app[i]->ptr);
+                stack[i]->pTail->lastName, stack[i]->StartAdrs);
         dprintf("round %d\n", i);
     }
 
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time1 = diff_in_second(start, end);
+// for testing whether program load data correctly
+#if defined(TEST)
+    #include "entry_test.c"
+    test(pHead);
+#endif
+
 #else /* ! OPT */
     clock_gettime(CLOCK_REALTIME, &start);
     while (fgets(line, sizeof(line), fp)) {
@@ -138,15 +147,15 @@ int main(int argc, char *argv[])
     fclose(fp);
 #endif
 
-    e = pHead;
+    e = pHead; 
 
-    /* the givn last name to find */
-    char input[MAX_LAST_NAME_SIZE] = "zyxel";
+    /* the givn last name to find */  
+    char input[MAX_LAST_NAME_SIZE] = "amability";
     e = pHead;
 
     assert(findName(input, e) &&
            "Did you implement findName() in " IMPL "?");
-    assert(0 == strcmp(findName(input, e)->lastName, "zyxel"));
+    assert(0 == strcmp(findName(input, e)->lastName, "amability"));
 
 #if defined(__GNUC__)
     __builtin___clear_cache((char *) pHead, (char *) pHead + sizeof(entry));
@@ -158,7 +167,7 @@ int main(int argc, char *argv[])
     cpu_time2 = diff_in_second(start, end);
 
     FILE *output;
-#if defined(OPT)
+#if defined(OPT) 
     output = fopen("opt.txt", "a");
 #else
     output = fopen("orig.txt", "a");
@@ -175,7 +184,7 @@ int main(int argc, char *argv[])
 #else
     free(entry_pool);
     free(tid);
-    free(app);
+    free(stack);
     munmap(map, fs);
 #endif
     return 0;

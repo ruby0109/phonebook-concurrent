@@ -30,17 +30,17 @@ typedef struct __PHONE_BOOK_ENTRY {
 
 entry *findName(char lastname[], entry *pHead);
 
-typedef struct _append_a {
-    char *ptr;
-    char *eptr;
+typedef struct _Thread_Stack_ {
+    char *StartAdrs;
+    char *EndAdrs;
     int tid;
     int nthread;
-    entry *entryStart;
+    entry *PoolPtr;
     entry *pHead;
-    entry *pLast;
-} append_a;
+    entry *pTail;
+} ThrdStack;
 
-append_a *new_append_a(char *ptr, char *eptr, int tid, int ntd, entry *start);
+ThrdStack *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd, entry *pptr);
 
 void append(void *arg);
 

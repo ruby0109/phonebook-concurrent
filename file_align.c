@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     while (fgets(rbuf, sizeof(rbuf), fd0)) {
         memset(wbuf, '\0', pad);
 
-        if ((suffix = (pad - strlen(rbuf))) != 0)
+        if ((suffix = (pad - strlen(rbuf))) > 0)
             strncpy(wbuf, rbuf,strlen(rbuf));
 
         fwrite(wbuf, pad, 1, fd1);

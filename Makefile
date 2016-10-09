@@ -1,7 +1,7 @@
 CC ?= gcc
 CFLAGS_common ?= -Wall -std=gnu99
 CFLAGS_orig = -O0
-CFLAGS_opt  = -O0 -pthread -g -pg
+CFLAGS_opt  = -O0 -pthread -pg
 
 ifdef THREAD
 CFLAGS_opt  += -D THREAD_NUM=${THREAD}
@@ -9,6 +9,11 @@ endif
 
 ifeq ($(strip $(DEBUG)),1)
 CFLAGS_opt += -DDEBUG -g
+endif
+
+ifeq ($(strip $(TEST)),1)
+CFLAGS_opt += -DTEST -g
+test = entry_test.c
 endif
 
 EXEC = phonebook_orig phonebook_opt
@@ -27,7 +32,7 @@ phonebook_orig: $(SRCS_common) phonebook_orig.c phonebook_orig.h
 phonebook_opt: $(SRCS_common) phonebook_opt.c phonebook_opt.h
 	$(CC) $(CFLAGS_common) $(CFLAGS_opt) \
 		-DIMPL="\"$@.h\"" -o $@ \
-		$(SRCS_common) $@.c
+		$(SRCS_common) $@.c $(test)
 
 run: $(EXEC)
 	echo 3 | sudo tee /proc/sys/vm/drop_caches
@@ -53,4 +58,4 @@ calculate: calculate.c
 .PHONY: clean
 clean:
 	$(RM) $(EXEC) *.o perf.* \
-	      	calculate orig.txt opt.txt output.txt runtime.png file_align align.txt
+	      	calculate orig.txt opt.txt output.txt runtime.png file_align align.txt ./dictionary/test.txt
