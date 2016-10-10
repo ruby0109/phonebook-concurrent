@@ -13,66 +13,64 @@ entry *findName(char lastname[], entry *pHead)
         if (strncasecmp(lastname, pHead->lastName, len) == 0
                 && (pHead->lastName[len] == '\n' ||
                     pHead->lastName[len] == '\0')) {
-            pHead->lastName = (char *) malloc(sizeof(char) *
-                                              MAX_LAST_NAME_SIZE);
-            memset(pHead->lastName, '\0', MAX_LAST_NAME_SIZE);
-            strcpy(pHead->lastName, lastname);
-            pHead->dtl = (pdetail) malloc(sizeof(detail));
+            pHead->lastName[len] = '\0';
+            if(pHead->dtl == NULL)
+                pHead->dtl = (pdetail) malloc(sizeof(detail));
             return pHead;
         }
-        dprintf("find string = %s\n", pHead->lastName);
+        DEBUG_PRINT("find string = %s\n", pHead->lastName);
         pHead = pHead->pNext;
     }
     return NULL;
 }
 /* ThrdInitial: Store value for each thread*/
-/* StartAds: The starting address of lastName, where the space was allocated by mmap.
+/* StartAds: The starting address of lastName,
+             where the space was allocated by mmap.
    EndAdrs: The end of the address lastName can use.
    tid: Id of the threads
    nthrd : The number of the thread.
-   pptr: The pointer of entry pool.   
-*/ 
-ThrdStack *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd,
-                       entry *pptr)
+   pptr: The pointer of entry pool.
+*/
+ThrdArg *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd,
+                     entry *pptr)
 {
-    ThrdStack *stack = (ThrdStack *) malloc(sizeof(ThrdStack));
+    ThrdArg *thrdArg = (ThrdArg *) malloc(sizeof(ThrdArg));
 
-    stack->StartAdrs = StartAdrs;
-    stack->EndAdrs = EndAdrs;
-    stack->tid = tid;
-    stack->nthread = nthrd;
-    stack->PoolPtr = pptr;
+    thrdArg->StartAdrs = StartAdrs;
+    thrdArg->EndAdrs = EndAdrs;
+    thrdArg->tid = tid;
+    thrdArg->nthread = nthrd;
+    thrdArg->PoolPtr = pptr;
 
-    stack->pHead = (stack->pTail = stack->PoolPtr);
-    return stack;
+    thrdArg->pHead = (thrdArg->pTail = thrdArg->PoolPtr);
+    return thrdArg;
 }
 
 void append(void *arg)
 {
     struct timespec start, end;
     double cpu_time;
+    int count = 0;
 
     clock_gettime(CLOCK_REALTIME, &start);
 
-    ThrdStack *stack = (ThrdStack *) arg;
+    ThrdArg *thrdArg = (ThrdArg *) arg;
 
-    int count = 0;
-    entry *j = stack->PoolPtr;
-    for (char *i = stack->StartAdrs; i < stack->EndAdrs;
-            i += MAX_LAST_NAME_SIZE * stack->nthread,
-            j += stack->nthread,count++) {
-        stack->pTail->pNext = j;
-        stack->pTail = stack->pTail->pNext;
+    entry *curEntry = thrdArg->PoolPtr;
+    for (char *curData = thrdArg->StartAdrs; curData < thrdArg->EndAdrs;
+            curData += MAX_LAST_NAME_SIZE, curEntry ++, count++) {
+        thrdArg->pTail->pNext = curEntry;
+        thrdArg->pTail = thrdArg->pTail->pNext;
 
-        stack->pTail->lastName = i;
-        dprintf("thread %d append string = %s\n",
-                stack->tid, stack->pTail->lastName);
-        stack->pTail->pNext = NULL;
+        thrdArg->pTail->lastName = curData;
+        DEBUG_PRINT("thread %d append string = %s\n",
+                    thrdArg->tid, thrdArg->pTail->lastName);
+        thrdArg->pTail->pNext = NULL;
     }
     clock_gettime(CLOCK_REALTIME, &end);
     cpu_time = diff_in_second(start, end);
 
-    dprintf("thread take %lf sec, count %d\n", cpu_time, count);
+    DEBUG_PRINT("thread take %lf sec, count %d\n", cpu_time, count);
 
     pthread_exit(NULL);
 }

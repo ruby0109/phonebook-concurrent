@@ -9,9 +9,9 @@
 #define HASH_SIZE 42737
 #define DICT_FILE "./dictionary/words.txt"
 
-typedef struct __HASH_TABLE{
+typedef struct __HASH_TABLE {
     entry **tail;
-}HashTable;
+} HashTable;
 
 HashTable *hash_ptr;
 
@@ -22,7 +22,7 @@ unsigned int HashFunction(char *str)
     int c;
 
     while((c = *str++)) {
-        hash = ((hash << 5) + hash) + c; // hash * 33 + c 
+        hash = ((hash << 5) + hash) + c; // hash * 33 + c
     }
     return (hash & HASH_SIZE);
 }
@@ -36,9 +36,9 @@ int findName_search(char lastname[], HashTable *hash_ptr)
 
     size_t len = strlen(lastname);
     for (list=hash_ptr->tail[value]; list != NULL ; list=list->pNext) {
-        if (strncasecmp(lastname, list->lastName,len) == 0){
-        return 1;
-        }     
+        if (strncasecmp(lastname, list->lastName,len) == 0) {
+            return 1;
+        }
     }
     return 0;
 }
@@ -82,23 +82,23 @@ void test(entry* pHead)
     char line[MAX_LAST_NAME_SIZE];
 
     test = fopen("./dictionary/test.txt","a");
-    
+
     org = fopen("./dictionary/words.txt", "r");
-       if (!org) {
+    if (!org) {
         printf("cannot open the file\n");
     }
 
     //put the list for testing into the hash table
     e = pHead;
-    while(e){
+    while(e) {
         append_search(e->lastName,hash_ptr);
-        fprintf(test, "apppend %s \n", e->lastName);
+        fprintf(test, "apppend %s", e->lastName);
         e= e->pNext;
     }
 
     // use findname to test whether all elements in the list
-    while(fgets(line, sizeof(line),org)){
-        if(findName_search(line, hash_ptr) == 0 )  
+    while(fgets(line, sizeof(line),org)) {
+        if(findName_search(line, hash_ptr) == 0 )
             fprintf(test, "%s not found\n", line);
     }
     fclose(org);

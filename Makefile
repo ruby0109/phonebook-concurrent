@@ -1,7 +1,7 @@
 CC ?= gcc
 CFLAGS_common ?= -Wall -std=gnu99
 CFLAGS_orig = -O0
-CFLAGS_opt  = -O0 -pthread -pg
+CFLAGS_opt  = -O0 -pthread -pg -g
 
 ifdef THREAD
 CFLAGS_opt  += -D THREAD_NUM=${THREAD}

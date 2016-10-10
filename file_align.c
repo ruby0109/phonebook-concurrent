@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
     fclose(fd0);
     fclose(fd1);
-
+    free(wbuf);
     return 0;
 }
 

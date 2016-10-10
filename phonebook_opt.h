@@ -30,7 +30,8 @@ typedef struct __PHONE_BOOK_ENTRY {
 
 entry *findName(char lastname[], entry *pHead);
 
-typedef struct _Thread_Stack_ {
+/* Argument of threads*/
+typedef struct _Thread_ARG_ {
     char *StartAdrs;
     char *EndAdrs;
     int tid;
@@ -38,9 +39,10 @@ typedef struct _Thread_Stack_ {
     entry *PoolPtr;
     entry *pHead;
     entry *pTail;
-} ThrdStack;
+} ThrdArg;
 
-ThrdStack *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd, entry *pptr);
+/* ThrdInitial: Store value for each thread*/
+ThrdArg *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd, entry *pptr);
 
 void append(void *arg);
 
