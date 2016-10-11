@@ -5,7 +5,7 @@
 #include <time.h>
 
 #define MAX_LAST_NAME_SIZE 16
-
+#define POOL_SIZE 8
 #define OPT 1
 
 typedef struct _detail {

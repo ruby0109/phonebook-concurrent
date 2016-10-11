@@ -8,6 +8,8 @@
 #include IMPL
 
 #if defined(OPT)
+#include "threadpool.h"
+#include "threadpool.c"
 #include <pthread.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -81,25 +83,27 @@ int main(int argc, char *argv[])
 
     int numEntry;//Number of the entry of the data
     int entryPerThrd;//Number of the entry allocated to the threads
-    pthread_t thread[THREAD_NUM];
+
     ThrdArg *thrdArg[THREAD_NUM];
 
     /* mmap for data file*/
     char *map = mmap(NULL, fs, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
     assert(map && "mmap error");
 
+
     /* entry pool for allocate space for the whole entry*/
     numEntry = fs / MAX_LAST_NAME_SIZE;
     entry *entry_pool = (entry *) malloc(sizeof(entry) * numEntry);
     assert(entry_pool && "entry_pool error");
 
+    /* Thread pool*/
+    threadpool_t *pool = threadpool_create(THREAD_NUM,POOL_SIZE,0);
+
     /* For compatibility*/
     pthread_setconcurrency(THREAD_NUM + 1);
 
-    /* Multi-Threading*/
+    /* Initializing the data for thread and add function in to the pool*/
     entryPerThrd = numEntry / THREAD_NUM + 1;
-    DEBUG_PRINT("entryPerThrd: %d \n", entryPerThrd);
-    DEBUG_PRINT("numEntry %d \n", numEntry);
     for (int i = 0; i < THREAD_NUM; i++) {
         char *startAdrs, *endAdrs;//start address and end address of data
 
@@ -113,14 +117,12 @@ int main(int argc, char *argv[])
         /* ThrdInitial: Store value for each thread*/
         thrdArg[i] = ThrdInitial(startAdrs, endAdrs, i, THREAD_NUM,
                                  entry_pool + entryPerThrd * i);
+        threadpool_add(pool,(void *) &append, (void *) thrdArg[i],0);
     }
-    /* Thread append each list in way of row major*/
-    clock_gettime(CLOCK_REALTIME, &mid);
-    for (int i = 0; i < THREAD_NUM; i++)
-        pthread_create( &thread[i], NULL, (void *) &append, (void *) thrdArg[i]);
 
-    for (int i = 0; i < THREAD_NUM; i++)
-        pthread_join(thread[i], NULL);
+    threadpool_destroy(pool,0);
+    threadpool_free(pool);
+    clock_gettime(CLOCK_REALTIME, &mid);
 
     /* connect each lists */
     for (int i = 0; i < THREAD_NUM; i++) {

@@ -24,13 +24,6 @@ entry *findName(char lastname[], entry *pHead)
     return NULL;
 }
 /* ThrdInitial: Store value for each thread*/
-/* StartAds: The starting address of lastName,
-             where the space was allocated by mmap.
-   EndAdrs: The end of the address lastName can use.
-   tid: Id of the threads
-   nthrd : The number of the thread.
-   pptr: The pointer of entry pool.
-*/
 ThrdArg *ThrdInitial(char *StartAdrs, char *EndAdrs, int tid, int nthrd,
                      entry *pptr)
 {
